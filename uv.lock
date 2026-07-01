@@ -888,7 +888,7 @@ wheels = [
 [[package]]
 name = "transcriptr"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "click" },
     { name = "jinja2" },
@@ -897,6 +897,10 @@ dependencies = [
     { name = "pandas" },
     { name = "plotly" },
     { name = "pydantic" },
+]
+
+[package.optional-dependencies]
+dev = [
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "pytest-mock" },
@@ -912,11 +916,12 @@ requires-dist = [
     { name = "pandas", specifier = ">=3.0.3" },
     { name = "plotly", specifier = ">=6.8.0" },
     { name = "pydantic", specifier = ">=2.13.4" },
-    { name = "pytest", specifier = ">=9.1.1" },
-    { name = "pytest-cov", specifier = ">=7.1.0" },
-    { name = "pytest-mock", specifier = ">=3.15.1" },
-    { name = "ruff", specifier = ">=0.15.20" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=9.1.1" },
+    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=7.1.0" },
+    { name = "pytest-mock", marker = "extra == 'dev'", specifier = ">=3.15.1" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.15.20" },
 ]
+provides-extras = ["dev"]
 
 [[package]]
 name = "typing-extensions"
