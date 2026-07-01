@@ -1,18 +1,18 @@
 lint:
-	ruff check src tests
-	ruff format --check src tests
+	uv run ruff check src tests
+	uv run ruff format --check src tests
 
 format:
-	ruff format src tests
+	uv run ruff format src tests
 
 type-check:
-	mypy src
+	uv run mypy src
 
 test:
-	pytest
+	uv run pytest
 
 test-integration:
-	pytest -m integration
+	uv run pytest -m integration
 
 coverage:
-	pytest --cov=transcriptr --cov-report=term-missing
+	uv run pytest --cov=transcriptr --cov-report=term-missing
