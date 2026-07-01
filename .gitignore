@@ -216,3 +216,22 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Nextflow execution
+work/
+.nextflow/
+.nextflow*
+.nextflow.log*
+
+# Reports and execution metadata
+timeline.html
+report.html
+trace.txt
+dag.*
+*.dot
+
+# Pipeline outputs (if you use a default output directory)
+results/
+
+# Tower (if used)
+.tower/
