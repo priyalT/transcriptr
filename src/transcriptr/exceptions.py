@@ -1,5 +1,6 @@
 
-from typing import Optional, Dict, Any
+from typing import Any
+
 
 class TranscriptrError(Exception):
     """
@@ -8,7 +9,7 @@ class TranscriptrError(Exception):
     default_message = "Transcriptr failed."
     def __init__(self, 
                  message: str | None = None,
-                 context: Optional[Dict[str, Any]] = None,
+                 context: dict[str, Any] | None = None,
                  ):
         if message is None:
             message = self.default_message
