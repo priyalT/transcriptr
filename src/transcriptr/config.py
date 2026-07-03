@@ -1,8 +1,8 @@
 from enum import StrEnum
 from pathlib import Path
+
 import yaml
 from pydantic import BaseModel, ValidationError
-import rich_click as click
 
 
 class LogLevel(StrEnum):
@@ -33,7 +33,6 @@ class GenomeConfig(BaseModel):
 
 class QCConfig(BaseModel):
     run_fastqc: bool
-
     min_genes: int
     min_cells: int
     max_mt: float
@@ -88,53 +87,135 @@ class TranscriptrConfig(BaseModel):
     logging: LogConfig
     output: OutputConfig
 
+
 class ConfigManager:
+    """Utility class for creating, validating and converting configuration files."""
+
+    @staticmethod
+    def init(path: Path) -> None:
+        """Create a template configuration file."""
+
+        template = {
+            "samples": [
+                {
+                    "name": "sample1",
+                    "reads": [
+                        "reads/sample_R1.fastq.gz",
+                        "reads/sample_R2.fastq.gz",
+                    ],
+                    "chemistry": "auto",
+                }
+            ],
+            "genome": {
+                "species": "human",
+                "reference": "reference/genome.fa",
+                "annotation": "reference/genes.gtf",
+            },
+            "qc": {
+                "run_fastqc": True,
+                "min_genes": 200,
+                "min_cells": 3,
+                "max_mt": 5.0,
+            },
+            "alignment": {
+                "tool": "starsolo",
+                "threads": 8,
+                "extra_args": [],
+            },
+            "scanpy": {
+                "normalize": True,
+                "log1p": True,
+                "n_top_genes": 2000,
+                "n_neighbors": 15,
+                "n_pcs": 50,
+                "resolution": 1.0,
+            },
+            "report": {
+                "html": True,
+                "plots": True,
+                "pdf": False,
+            },
+            "resources": {
+                "cpus": 8,
+                "memory": "32 GB",
+            },
+            "logging": {
+                "level": "INFO",
+                "save_command": True,
+                "verbose": False,
+            },
+            "output": {
+                "directory": "results",
+                "overwrite": False,
+                "compress": False,
+            },
+        }
+
+        with path.open("w", encoding="utf-8") as file:
+            yaml.safe_dump(template, file, sort_keys=False)
+
+    @staticmethod
+    def check(path: Path) -> TranscriptrConfig:
+        """Validate a configuration file."""
+
+        return ConfigManager.load(path)
+
+    @staticmethod
+    def _resolve(path: Path, config_dir: Path) -> Path:
+        """Resolve relative paths against the configuration directory."""
+
+        if path.is_absolute():
+            return path
+
+        return (config_dir / path).resolve()
+
     @staticmethod
     def load(path: Path) -> TranscriptrConfig:
+        """Load and validate a configuration file."""
+
         try:
-            with path.open("r") as file:
+            with path.open("r", encoding="utf-8") as file:
                 data = yaml.safe_load(file)
-            
+
             config = TranscriptrConfig.model_validate(data)
+
             config_dir = path.parent
 
-            if not config.genome.reference.is_absolute():
-                config.genome.reference = (
-                    config_dir / config.genome.reference
-                ).resolve()
-            
+            config.genome.reference = ConfigManager._resolve(
+                config.genome.reference,
+                config_dir,
+            )
+
+            config.genome.annotation = ConfigManager._resolve(
+                config.genome.annotation,
+                config_dir,
+            )
+
+            config.output.directory = ConfigManager._resolve(
+                config.output.directory,
+                config_dir,
+            )
+
             for sample in config.samples:
                 sample.reads = [
-                    (config_dir / read).resolve()
-                    if not read.is_absolute()
-                    else read
-                    for read in sample.reads
+                    ConfigManager._resolve(read, config_dir) for read in sample.reads
                 ]
-
-            if not config.output.directory.is_absolute():
-                config.output.directory = (
-                    config_dir / config.output.directory
-                ).resolve()
 
             return config
 
         except FileNotFoundError as e:
-            raise FileNotFoundError(
-                f"Configuration file not found: {path}"
-            ) from e
+            raise FileNotFoundError(f"Configuration file not found: {path}") from e
 
         except yaml.YAMLError as e:
-            raise ValueError(
-                f"Invalid YAML syntax in '{path}': {e}"
-            ) from e
+            raise ValueError(f"Invalid YAML syntax in '{path}': {e}") from e
 
         except ValidationError as e:
-            raise ValueError(
-                f"Configuration validation failed:\n{e}"
-            ) from e
-    
+            raise ValueError(f"Configuration validation failed:\n{e}") from e
+
     @staticmethod
     def to_nextflow_params(config: TranscriptrConfig) -> dict:
+        """Convert a validated configuration into Nextflow parameters."""
+
         return {
             "samples": [
                 {
