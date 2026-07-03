@@ -1,6 +1,9 @@
 from enum import StrEnum
 from pathlib import Path
-
+from transcriptr.exceptions import (
+    ConfigValidationError,
+    TranscriptrIOError,
+)
 import yaml
 from pydantic import BaseModel, ValidationError
 
@@ -94,65 +97,69 @@ class ConfigManager:
     @staticmethod
     def init(path: Path) -> None:
         """Create a template configuration file."""
+        if path.exists():
+            raise FileExistsError(
+                f"{path} already exists. Use another filename or remove it first."
+                )
+        else:
+            template = {
+                "samples": [
+                    {
+                        "name": "sample1",
+                        "reads": [
+                            "reads/sample_R1.fastq.gz",
+                            "reads/sample_R2.fastq.gz",
+                        ],
+                        "chemistry": "auto",
+                    }
+                ],
+                "genome": {
+                    "species": "human",
+                    "reference": "reference/genome.fa",
+                    "annotation": "reference/genes.gtf",
+                },
+                "qc": {
+                    "run_fastqc": True,
+                    "min_genes": 200,
+                    "min_cells": 3,
+                    "max_mt": 5.0,
+                },
+                "alignment": {
+                    "tool": "starsolo",
+                    "threads": 8,
+                    "extra_args": [],
+                },
+                "scanpy": {
+                    "normalize": True,
+                    "log1p": True,
+                    "n_top_genes": 2000,
+                    "n_neighbors": 15,
+                    "n_pcs": 50,
+                    "resolution": 1.0,
+                },
+                "report": {
+                    "html": True,
+                    "plots": True,
+                    "pdf": False,
+                },
+                "resources": {
+                    "cpus": 8,
+                    "memory": "32 GB",
+                },
+                "logging": {
+                    "level": "INFO",
+                    "save_command": True,
+                    "verbose": False,
+                },
+                "output": {
+                    "directory": "results",
+                    "overwrite": False,
+                    "compress": False,
+                },
+            }
 
-        template = {
-            "samples": [
-                {
-                    "name": "sample1",
-                    "reads": [
-                        "reads/sample_R1.fastq.gz",
-                        "reads/sample_R2.fastq.gz",
-                    ],
-                    "chemistry": "auto",
-                }
-            ],
-            "genome": {
-                "species": "human",
-                "reference": "reference/genome.fa",
-                "annotation": "reference/genes.gtf",
-            },
-            "qc": {
-                "run_fastqc": True,
-                "min_genes": 200,
-                "min_cells": 3,
-                "max_mt": 5.0,
-            },
-            "alignment": {
-                "tool": "starsolo",
-                "threads": 8,
-                "extra_args": [],
-            },
-            "scanpy": {
-                "normalize": True,
-                "log1p": True,
-                "n_top_genes": 2000,
-                "n_neighbors": 15,
-                "n_pcs": 50,
-                "resolution": 1.0,
-            },
-            "report": {
-                "html": True,
-                "plots": True,
-                "pdf": False,
-            },
-            "resources": {
-                "cpus": 8,
-                "memory": "32 GB",
-            },
-            "logging": {
-                "level": "INFO",
-                "save_command": True,
-                "verbose": False,
-            },
-            "output": {
-                "directory": "results",
-                "overwrite": False,
-                "compress": False,
-            },
-        }
-
-        with path.open("w", encoding="utf-8") as file:
-            yaml.safe_dump(template, file, sort_keys=False)
+            with path.open("w", encoding="utf-8") as file:
+                yaml.safe_dump(template, file, sort_keys=False)
 
     @staticmethod
     def check(path: Path) -> TranscriptrConfig:
@@ -204,13 +211,13 @@ class ConfigManager:
             return config
 
         except FileNotFoundError as e:
-            raise FileNotFoundError(f"Configuration file not found: {path}") from e
+            raise TranscriptrIOError(f"Configuration file not found: {path}") from e
 
         except yaml.YAMLError as e:
-            raise ValueError(f"Invalid YAML syntax in '{path}': {e}") from e
+            raise ConfigValidationError(f"Invalid YAML syntax in '{path}': {e}") from e
 
         except ValidationError as e:
-            raise ValueError(f"Configuration validation failed:\n{e}") from e
+            raise ConfigValidationError(f"Configuration validation failed:\n{e}") from e
 
     @staticmethod
     def to_nextflow_params(config: TranscriptrConfig) -> dict:
