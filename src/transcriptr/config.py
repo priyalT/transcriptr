@@ -1,11 +1,13 @@
 from enum import StrEnum
 from pathlib import Path
+
+import yaml
+from pydantic import BaseModel, ValidationError
+
 from transcriptr.exceptions import (
     ConfigValidationError,
     TranscriptrIOError,
 )
-import yaml
-from pydantic import BaseModel, ValidationError
 
 
 class LogLevel(StrEnum):

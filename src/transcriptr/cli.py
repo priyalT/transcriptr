@@ -31,7 +31,7 @@ def check(path: Path):
         ConfigManager.check(path)
     except Exception as e:
         click.secho(str(e), fg="red", err=True)
-        raise click.Abort()
+        raise click.Abort() from e
 
     click.secho("✓ Configuration is valid.", fg="green")
 
