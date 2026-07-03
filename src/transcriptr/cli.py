@@ -32,7 +32,7 @@ def check(path: Path):
     except Exception as e:
         click.secho(str(e), fg="red", err=True)
         raise click.Abort()
-    
+
     click.secho("✓ Configuration is valid.", fg="green")
 
 

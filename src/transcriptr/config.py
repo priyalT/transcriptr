@@ -100,7 +100,7 @@ class ConfigManager:
         if path.exists():
             raise FileExistsError(
                 f"{path} already exists. Use another filename or remove it first."
-                )
+            )
         else:
             template = {
                 "samples": [
