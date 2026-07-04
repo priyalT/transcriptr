@@ -18,9 +18,9 @@ class InputValidator:
     """Validate input files"""
 
 
-@classmethod
+# @classmethod
 def validate(cls, config: Path) -> ValidationResult:
-    result = ValidationResult
+    result = ValidationResult()
     cls._validate_fastqs(config, result)
     cls._validate_fastq_format(config, result)
     cls._validate_paired_reads(config, result)
